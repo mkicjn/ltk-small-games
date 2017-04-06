@@ -46,7 +46,7 @@
 (defun lose ()
   (with-ltk ()
 	    (let* ((frame (make-instance 'frame :height 200 :width 300))
-		   (text (make-instance 'label :master frame :padx 10 :pady 10 :text
+		   (text (make-instance 'label :master frame :text
 					(random-elt '("Wow, that's really sad." "Well, that's just sad."))))
 		   (button (make-instance 'button :master frame :text "Quit" :command #'exit-wish)))
 	      (pack frame)
