@@ -11,11 +11,8 @@
   (mapcar #'1+ (list (* (car coords) 25) (* (cadr coords) 25)
 		     (* (1+ (car coords)) 25) (* (1+ (cadr coords)) 25))))
 
-(defun snake-decf-life (life-vals)
-  (loop for i upto (1- (length life-vals))
-	if (> (nth i life-vals) 0) do (decf (nth i life-vals))
-	if (< (nth i life-vals) 0) do (incf (nth i life-vals))
-	finally (return life-vals)))
+(defun update-life (life-vals)
+  (mapcar (lambda (x) (if (zerop x) 0 (funcall (if (> x 0) #'1- #'1+) x))) life-vals))
 
 (defun create-grid (canvas life-vals)
   (loop for life in life-vals for i from 0
@@ -84,13 +81,13 @@
 	      (force-focus c)
 	      (loop while t
 		    do (process-events)
-		    if (check-boundaries index next-move) return nil
+		    when (check-boundaries index next-move) return nil
 		    do (incf index (index-move next-move))
 		    do (if (= index food-index)
 			 (progn (incf s-length) (setf food-index (move-food c food index life-vals)))
-			 (setf life-vals (snake-decf-life life-vals)))
+			 (setf life-vals (update-life life-vals)))
 		    do (process-events)
-		    if (> (nth index life-vals) 0) return nil
+		    when (> (nth index life-vals) 0) return nil
 		    do (progn (setf (nth index life-vals) s-length)
 			      (draw-grid c grid-field life-vals) 
 			      (sleep 1/8)))
@@ -150,7 +147,7 @@
 		    when (= index2 food-index)
 		    do (progn (decf s-length2) (setf food-index (move-food c food index2 life-vals)))
 		    unless (or (= index food-index) (= index2 food-index))
-		    do (setf life-vals (snake-decf-life life-vals))
+		    do (setf life-vals (update-life life-vals))
 		    do (process-events)
 		    unless (zerop (nth index life-vals)) return nil
 		    unless (zerop (nth index2 life-vals)) return nil
