@@ -28,9 +28,10 @@
 
 (defun index-move (direction) (ccase direction (up -20) (left -1) (right 1) (down 20)))
 
+(defun random-elt (l) (nth (random (length l)) l))
+
 (defun new-food-index (life-vals)
-  (let ((p (loop for life in life-vals for i from 0 if (zerop life) collect i)))
-    (nth (random (length p)) p)))
+  (let ((p (loop for life in life-vals for i from 0 if (zerop life) collect i))) (random-elt p)))
 
 (defun move-food (canvas food old-index life-vals &aux (new-index (new-food-index life-vals)))
   (let ((deltas (mapcar #'- (grid-coords new-index) (grid-coords old-index))))
@@ -42,10 +43,16 @@
       (and (= (mod index 20) 0) (equal next-move 'left))
       (and (= (mod index 20) 19) (equal next-move 'right))))
 
-(defun lose (canvas)
-  (create-text canvas 50 50 (nth (random 3) '("Wow, that's really sad."
-					      "Well, that's just sad."
-					      "Bad snake award, 2016-17!"))))
+(defun lose ()
+  (with-ltk ()
+	    (let* ((frame (make-instance 'frame :height 200 :width 300))
+		   (text (make-instance 'label :master frame :padx 10 :pady 10 :text
+					(random-elt '("Wow, that's really sad." "Well, that's just sad."))))
+		   (button (make-instance 'button :master frame :text "Quit" :command #'exit-wish)))
+	      (pack frame)
+	      (pack text)
+	      (pack button)))
+  #'exit-wish)
 
 (defun snake (&optional (life-vals (zeros 400)))
   (with-ltk ()
@@ -87,7 +94,7 @@
 		    do (progn (setf (nth index life-vals) s-length)
 			      (draw-grid c grid-field life-vals) 
 			      (sleep 1/8)))
-	      (lose c))))
+	      (funcall (lose)))))
 
 (defun snake2p (&optional (life-vals (zeros 400)))
   (with-ltk ()
@@ -129,7 +136,6 @@
 		      (unless (equal next-move2 'up) (setf next-move2 'down))))
 	      (bind c "<ButtonPress-1>"
 		    (lambda (evt) (format t "(~A, ~A)" (event-x evt) (event-y evt))))
-
 	      (itemconfigure c food :fill 'red)
 	      (pack c)
 	      (force-focus c)
@@ -152,6 +158,6 @@
 		    do (setf (nth index2 life-vals) s-length2)
 		    do (draw-grid c grid-field life-vals) 
 		    do (sleep 1/8))
-	      (lose c))))
+	      (funcall (lose)))))
 
 (snake)
