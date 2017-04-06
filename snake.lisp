@@ -13,7 +13,7 @@
 
 (defun snake-decf-life (life-vals)
   (loop for i upto (1- (length life-vals))
-	unless (zerop i) do (decf (nth i life-vals))
+	unless (zerop (nth i life-vals)) do (decf (nth i life-vals))
 	finally (return life-vals)))
 
 (defun create-grid (canvas life-vals)
@@ -46,8 +46,9 @@
 (defun snake (&optional (life-vals (zeros 400)))
   (with-ltk ()
 	    (let* ((c (make-instance 'canvas :height 501 :width 501))
-		   (grid-field (create-grid c life-vals)) (game-lose nil) (next-move 'right)
-		   (index 150) (s-length 5) (food-index (new-food-index life-vals))
+		   (grid-field (create-grid c life-vals))
+		   (next-move 'right) (index 20) (s-length 3)
+		   (food-index (new-food-index life-vals))
 		   (food (apply #'create-oval c (grid-coords food-index))))
 	      (bind c "<KeyPress-q>"
 		    (lambda (evt) (declare (ignore evt))
@@ -70,19 +71,18 @@
 	      (itemconfigure c food :fill 'red)
 	      (pack c)
 	      (force-focus c)
-	      (loop until game-lose do
-		    (progn (process-events)
-			   (setf game-lose (check-boundaries index next-move))
-			   (incf index (index-move next-move))
-			   (if (= index food-index)
-			     (progn (incf s-length) 
-				   (setf food-index (move-food c food index life-vals)))
-			   (setf life-vals (snake-decf-life life-vals)))
-			   (process-events)
-			   (setf game-lose (> (nth index life-vals) 0))
-			   (setf (nth index life-vals) s-length)
-			   (draw-grid c grid-field life-vals) 
-			   (sleep 1/8))
-		    finally (lose c)))))
+	      (loop while t
+		    do (process-events)
+		    if (check-boundaries index next-move) return nil
+		    do (incf index (index-move next-move))
+		    do (if (= index food-index)
+			 (progn (incf s-length) (setf food-index (move-food c food index life-vals)))
+			 (setf life-vals (snake-decf-life life-vals)))
+		    do (process-events)
+		    if (> (nth index life-vals) 0) return nil
+		    do (progn (setf (nth index life-vals) s-length)
+			      (draw-grid c grid-field life-vals) 
+			      (sleep 1/8)))
+	      (lose c))))
 
 (snake)
