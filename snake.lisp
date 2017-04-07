@@ -110,7 +110,6 @@
 		    do (progn (incf s-length2) (setf food-index (move-food c food index2 life-vals)))
 		    unless (or (= index food-index) (equal index2 food-index))
 		    do (setf life-vals (update-life life-vals))
-		    ;do (process-events)
 		    when (> (nth index life-vals) 0) return nil
 		    when (and p2 (< (nth index2 life-vals) 0)) return nil
 		    do (setf (nth index life-vals) s-length)
