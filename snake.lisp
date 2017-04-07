@@ -107,7 +107,7 @@
 		    when (= index food-index)
 		    do (progn (incf s-length) (setf food-index (move-food c food index life-vals)))
 		    when (and p2 (= index2 food-index))
-		    do (progn (incf s-length2) (setf food-index (move-food c food index2 life-vals)))
+		    do (progn (decf s-length2) (setf food-index (move-food c food index2 life-vals)))
 		    unless (or (= index food-index) (equal index2 food-index))
 		    do (setf life-vals (update-life life-vals))
 		    when (> (nth index life-vals) 0) return nil
