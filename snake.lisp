@@ -116,8 +116,8 @@
 		    when (and p2 (= index2 food-index))
 		    do (progn (decf s-length2) (setf food-index (move-food c food index2 life-vals)))
 		    ;; Check for self-collisions
-		    when (> (nth index life-vals) 0) return nil
-		    when (and p2 (< (nth index2 life-vals) 0)) return nil
+		    when (not (zerop (nth index life-vals))) return nil
+		    when (and p2 (not (zerop (nth index2 life-vals)))) return nil
 		    ;; Update life values at new indices
 		    do (setf (nth index life-vals) s-length)
 		    when p2 do (setf (nth index2 life-vals) s-length2)
