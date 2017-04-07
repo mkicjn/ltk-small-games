@@ -47,11 +47,11 @@
 					(random-elt '("Wow, that's really sad." "Well, that's just sad."))))
 		   (button (make-instance 'button :master frame :text "Quit" :command #'exit-wish)))
 	      (pack frame)
-	      (pack text)
-	      (pack button)))
+	      (pack text :pady 20 :padx 10)
+	      (pack button :pady 20 :padx 10)))
   #'exit-wish)
 
-(defun snake (&key (life-vals (zeros 400))(p2 nil))
+(defun snake (&key (life-vals (zeros 400))(p2 nil)(speed 8))
   (with-ltk ()
 	    (let* ((c (make-instance 'canvas :height 501 :width 501))
 		   (grid-field (create-grid c life-vals))
@@ -59,6 +59,9 @@
 		   (next-move2 'left) (moved2 nil) (index2 379) (s-length2 -3)
 		   (food-index (new-food-index life-vals))
 		   (food (apply #'create-oval c (grid-coords food-index))))
+	      (bind c "<KeyPress-space>"
+		    (lambda (evt) (declare (ignore evt))
+		      (setf speed (* 2 speed))))
 	      (bind c "<KeyPress-q>"
 		    (lambda (evt) (declare (ignore evt))
 		      (exit-wish)))
@@ -122,7 +125,17 @@
 		    do (setf (nth index life-vals) s-length)
 		    when p2 do (setf (nth index2 life-vals) s-length2)
 		    ;; Finish up: draw and sleep
-		    do (progn (draw-grid c grid-field life-vals) (sleep 1/8)))
+		    do (progn (draw-grid c grid-field life-vals) (sleep (/ 1 speed))))
 	      (funcall (lose)))))
 
-(snake)
+(defun menu ()
+  (with-ltk ()
+	    (wm-title *tk* "Snake")
+	    (let* ((button1 (make-instance 'button :text "One player"
+					   :command #'snake))
+		   (button2 (make-instance 'button :text "Two-player"
+					   :command (lambda () (snake :p2 t)))))
+	      (pack button1 :padx 10 :pady 10)
+	      (pack button2 :padx 10 :pady 10))))
+
+(menu)
