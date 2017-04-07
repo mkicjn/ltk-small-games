@@ -51,10 +51,10 @@
 	      (pack button :pady 20 :padx 10)))
   #'exit-wish)
 
-(defun snake (&key (life-vals (zeros 400))(p2 nil)(speed 8))
+(defun snake (&key (p2 nil)(speed 8))
   (with-ltk ()
 	    (let* ((c (make-instance 'canvas :height 501 :width 501))
-		   (grid-field (create-grid c life-vals))
+		   (life-vals (zeros 400))(grid-field (create-grid c life-vals))
 		   (next-move 'right) (moved nil) (index 20) (s-length 3)
 		   (next-move2 'left) (moved2 nil) (index2 379) (s-length2 -3)
 		   (food-index (new-food-index life-vals))
