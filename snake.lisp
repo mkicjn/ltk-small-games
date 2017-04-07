@@ -51,110 +51,71 @@
 	      (pack button)))
   #'exit-wish)
 
-(defun snake (&optional (life-vals (zeros 400)))
+(defun snake (&key (life-vals (zeros 400))(p2 nil))
   (with-ltk ()
 	    (let* ((c (make-instance 'canvas :height 501 :width 501))
 		   (grid-field (create-grid c life-vals))
-		   (next-move 'right) (index 20) (s-length 3)
+		   (next-move 'right) (moved nil) (index 20) (s-length 3)
+		   (next-move2 'left) (moved2 nil) (index2 379) (s-length2 -3)
 		   (food-index (new-food-index life-vals))
 		   (food (apply #'create-oval c (grid-coords food-index))))
 	      (bind c "<KeyPress-q>"
 		    (lambda (evt) (declare (ignore evt))
 		      (exit-wish)))
-	      (bind c "<KeyPress-r>"
-		    (lambda (evt) (declare (ignore evt))
-		      (create-grid c life-vals)))
 	      (bind c "<KeyPress-Up>"
 		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move 'down) (setf next-move 'up))))
+		      (unless (or moved (equal next-move 'down))
+			(setf next-move 'up) (setf moved t))))
 	      (bind c "<KeyPress-Left>"
 		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move 'right) (setf next-move 'left))))
+		      (unless (or moved (equal next-move 'right))
+			(setf next-move 'left) (setf moved t))))
 	      (bind c "<KeyPress-Right>"
 		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move 'left) (setf next-move 'right))))
+		      (unless (or moved (equal next-move 'left))
+			(setf next-move 'right) (setf moved t))))
 	      (bind c "<KeyPress-Down>"
 		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move 'up) (setf next-move 'down))))
+		      (unless (or moved (equal next-move 'up))
+			(setf next-move 'down) (setf moved t))))
+	      (if p2 (progn
+		(bind c "<KeyPress-w>"
+		      (lambda (evt) (declare (ignore evt))
+			(unless (or moved2 (equal next-move2 'down))
+			  (setf next-move2 'up) (setf moved2 t))))
+		(bind c "<KeyPress-s>"
+		      (lambda (evt) (declare (ignore evt))
+			(unless (or moved2 (equal next-move2 'up))
+			  (setf next-move2 'down) (setf moved2 t))))
+		(bind c "<KeyPress-a>"
+		      (lambda (evt) (declare (ignore evt))
+			(unless (or moved2 (equal next-move2 'right))
+			  (setf next-move2 'left) (setf moved2 t))))
+		(bind c "<KeyPress-d>"
+		      (lambda (evt) (declare (ignore evt))
+			(unless (or moved2 (equal next-move2 'left))
+			  (setf next-move2 'right) (setf moved2 t))))))
 	      (itemconfigure c food :fill 'red)
 	      (pack c)
 	      (force-focus c)
 	      (loop while t
-		    do (process-events)
+		    do (progn (setf moved nil) (setf moved2 nil) (process-events))
 		    when (check-boundaries index next-move) return nil
+		    when (and p2 (check-boundaries index2 next-move2)) return nil
 		    do (incf index (index-move next-move))
-		    do (if (= index food-index)
-			 (progn (incf s-length) (setf food-index (move-food c food index life-vals)))
-			 (setf life-vals (update-life life-vals)))
-		    do (process-events)
-		    when (> (nth index life-vals) 0) return nil
-		    do (progn (setf (nth index life-vals) s-length)
-			      (draw-grid c grid-field life-vals) 
-			      (sleep 1/8)))
-	      (funcall (lose)))))
-
-(defun snake2p (&optional (life-vals (zeros 400)))
-  (with-ltk ()
-	    (let* ((c (make-instance 'canvas :height 501 :width 501))
-		   (grid-field (create-grid c life-vals))
-		   (next-move 'right) (index 20) (s-length 3)
-		   (next-move2 'left) (index2 379) (s-length2 -3)
-		   (food-index (new-food-index life-vals))
-		   (food (apply #'create-oval c (grid-coords food-index))))
-	      (bind c "<KeyPress-q>"
-		    (lambda (evt) (declare (ignore evt))
-		      (exit-wish)))
-	      (bind c "<KeyPress-r>"
-		    (lambda (evt) (declare (ignore evt))
-		      (create-grid c life-vals)))
-	      (bind c "<KeyPress-Up>"
-		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move 'down) (setf next-move 'up))))
-	      (bind c "<KeyPress-Left>"
-		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move 'right) (setf next-move 'left))))
-	      (bind c "<KeyPress-Right>"
-		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move 'left) (setf next-move 'right))))
-	      (bind c "<KeyPress-Down>"
-		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move 'up) (setf next-move 'down))))
-	      (bind c "<KeyPress-w>"
-		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move2 'down) (setf next-move2 'up))))
-	      (bind c "<KeyPress-a>"
-		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move2 'right) (setf next-move2 'left))))
-	      (bind c "<KeyPress-d>"
-		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move2 'left) (setf next-move2 'right))))
-	      (bind c "<KeyPress-s>"
-		    (lambda (evt) (declare (ignore evt))
-		      (unless (equal next-move2 'up) (setf next-move2 'down))))
-	      (bind c "<ButtonPress-1>"
-		    (lambda (evt) (format t "(~A, ~A)" (event-x evt) (event-y evt))))
-	      (itemconfigure c food :fill 'red)
-	      (pack c)
-	      (force-focus c)
-	      (loop while t
-		    do (process-events)
-		    when (check-boundaries index next-move) return nil
-		    when (check-boundaries index2 next-move2) return nil
-		    do (incf index (index-move next-move))
-		    do (incf index2 (index-move next-move2))
+		    when p2 do (incf index2 (index-move next-move2))
 		    when (= index food-index)
 		    do (progn (incf s-length) (setf food-index (move-food c food index life-vals)))
-		    when (= index2 food-index)
-		    do (progn (decf s-length2) (setf food-index (move-food c food index2 life-vals)))
-		    unless (or (= index food-index) (= index2 food-index))
+		    when (and p2 (= index2 food-index))
+		    do (progn (incf s-length2) (setf food-index (move-food c food index2 life-vals)))
+		    unless (or (= index food-index) (equal index2 food-index))
 		    do (setf life-vals (update-life life-vals))
-		    do (process-events)
-		    unless (zerop (nth index life-vals)) return nil
-		    unless (zerop (nth index2 life-vals)) return nil
+		    ;do (process-events)
+		    when (> (nth index life-vals) 0) return nil
+		    when (and p2 (< (nth index2 life-vals) 0)) return nil
 		    do (setf (nth index life-vals) s-length)
-		    do (setf (nth index2 life-vals) s-length2)
-		    do (draw-grid c grid-field life-vals) 
-		    do (sleep 1/8))
+		    when p2 do (setf (nth index2 life-vals) s-length2)
+		    do (progn (draw-grid c grid-field life-vals) (sleep 1/8)))
 	      (funcall (lose)))))
 
 (snake)
