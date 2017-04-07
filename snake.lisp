@@ -99,21 +99,29 @@
 	      (pack c)
 	      (force-focus c)
 	      (loop while t
+		    ;; Reset moved booleans, process keypress events
 		    do (progn (setf moved nil) (setf moved2 nil) (process-events))
+		    ;; Check boundaries
 		    when (check-boundaries index next-move) return nil
 		    when (and p2 (check-boundaries index2 next-move2)) return nil
+		    ;; Move indices
 		    do (incf index (index-move next-move))
 		    when p2 do (incf index2 (index-move next-move2))
+		    ;; Check for food collection
 		    when (= index food-index)
 		    do (progn (incf s-length) (setf food-index (move-food c food index life-vals)))
 		    when (and p2 (= index2 food-index))
 		    do (progn (decf s-length2) (setf food-index (move-food c food index2 life-vals)))
+		    ;; Update life values if food hasn't moved
 		    unless (or (= index food-index) (equal index2 food-index))
 		    do (setf life-vals (update-life life-vals))
+		    ;; Check for self-collisions
 		    when (> (nth index life-vals) 0) return nil
 		    when (and p2 (< (nth index2 life-vals) 0)) return nil
+		    ;; Update life values at new indices
 		    do (setf (nth index life-vals) s-length)
 		    when p2 do (setf (nth index2 life-vals) s-length2)
+		    ;; Finish up: draw and sleep
 		    do (progn (draw-grid c grid-field life-vals) (sleep 1/8)))
 	      (funcall (lose)))))
 
