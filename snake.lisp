@@ -107,14 +107,14 @@
 		    ;; Move indices
 		    do (incf index (index-move next-move))
 		    when p2 do (incf index2 (index-move next-move2))
-		    ;; Check for food collection
+		    ;; Update life values if food isn't collected
+		    unless (or (= index food-index) (equal index2 food-index))
+		    do (setf life-vals (update-life life-vals))
+		    ;; Update snake length and food location if collected
 		    when (= index food-index)
 		    do (progn (incf s-length) (setf food-index (move-food c food index life-vals)))
 		    when (and p2 (= index2 food-index))
 		    do (progn (decf s-length2) (setf food-index (move-food c food index2 life-vals)))
-		    ;; Update life values if food hasn't moved
-		    unless (or (= index food-index) (equal index2 food-index))
-		    do (setf life-vals (update-life life-vals))
 		    ;; Check for self-collisions
 		    when (> (nth index life-vals) 0) return nil
 		    when (and p2 (< (nth index2 life-vals) 0)) return nil
