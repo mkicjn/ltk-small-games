@@ -3,7 +3,7 @@
 
 (setf *random-state* (make-random-state t))
 
-(defun zeros (x) (loop for i from 1 to x collect 0))
+(defun zeros (n) (loop repeat n collect 0))
 
 (defun int-coords (index &optional (maxx 20)) (list (mod index maxx) (floor (/ index maxx))))
 
