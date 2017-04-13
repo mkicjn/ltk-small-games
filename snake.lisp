@@ -101,7 +101,7 @@
 	      (itemconfigure c food :fill 'red)
 	      (pack c)
 	      (force-focus c)
-	      (loop while t
+	      (loop
 		    ;; Reset moved booleans, process keypress events
 		    do (progn (setf moved nil) (setf moved2 nil) (process-events))
 		    ;; Check boundaries
