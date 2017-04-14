@@ -95,7 +95,7 @@
 	      (pack field)
 	      (itemconfigure field (create-rectangle field 0 0 499 499) :fill 'white)
 	      (force-focus field)
-	      (draw-board field 0 0 500 500)
+	      (draw-board field 1 1 500 500)
 	      (loop for ix from 0 to 2
 		    do (loop for iy from 0 to 2 do
 			     (draw-board field (* ix 166) (* iy 166) 166 166))))))
