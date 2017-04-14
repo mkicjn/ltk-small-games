@@ -48,35 +48,43 @@
       nil)))
 
 (defun check-small-victory (board)
-  (destructuring-bind (a b c
-		       d e f
-		       g h i) board
-    (if (remove-if #'null
-		   (mapcar (lambda (l) (reduce (lambda (x y) (and x y (equal x y))) l))
-			   `((,a ,b ,c) (,d ,e ,f) (,g ,h ,i)
-			     (,a ,d ,g) (,b ,e ,h) (,c ,f ,i)
-			     (,a ,e ,i) (,c ,e ,g))))
-      t nil)))
+  (destructuring-bind (a b c d e f g h i) board
+    (reduce (lambda (x y) (or x y))
+	    (mapcar (lambda (l)
+		      (reduce (lambda (x y) (if (and x y (symbolp x) (symbolp y) (equal x y)) x nil)) l))
+		    `((,a ,b ,c) (,d ,e ,f) (,g ,h ,i)
+		      (,a ,d ,g) (,b ,e ,h) (,c ,f ,i)
+		      (,a ,e ,i) (,c ,e ,g) )))))
+
+(defun check-big-victory (board)
+  (check-small-victory (mapcar #'check-small-victory board)))
+
+(defun restrict-cell (arg) (if (null arg) -1 arg))
+
+(defmacro update (canvas board winner)
+  `(progn (setf ,board
+	 (loop with tmp-board = ,board
+	       for i from 0 to 8
+	       for ix = (* (mod i 3) 166)
+	       for iy = (* (_/ i 3) 166)
+	       for sieg = (check-small-victory (nth i ,board))
+	       when sieg do (progn (funcall (symbol->draw-fun sieg) ,canvas `(,ix ,iy) :width 166 :height 166)
+				   (setf (nth i tmp-board) (mapcar #'restrict-cell (nth i tmp-board))))
+	       finally (return tmp-board)))
+	  (setf ,winner (check-big-victory ,board))))
 
 (defun game ()
   (with-ltk ()
 	    (let* ((field (make-instance 'canvas :height 500 :width 500))
-		   (boards '((nil nil nil nil nil nil nil nil nil)
-			     (nil nil nil nil nil nil nil nil nil)
-			     (nil nil nil nil nil nil nil nil nil)
-			     (nil nil nil nil nil nil nil nil nil)
-			     (nil nil nil nil nil nil nil nil nil)
-			     (nil nil nil nil nil nil nil nil nil)
-			     (nil nil nil nil nil nil nil nil nil)
-			     (nil nil nil nil nil nil nil nil nil)
-			     (nil nil nil nil nil nil nil nil nil))))
-	      (bind field "<ButtonPress-1>" (lambda (evt) (try-move 'x field evt boards)))
-	      (bind field "<ButtonPress-3>" (lambda (evt) (try-move 'o field evt boards)))
+		   (boards (loop repeat 9 collect (loop repeat 9 collect nil)))
+		   (winner nil))
+	      (bind field "<ButtonPress-1>" (lambda (evt) (unless winner (progn (try-move 'x field evt boards)
+					      (update field boards winner)))))
+	      (bind field "<ButtonPress-3>" (lambda (evt) (unless winner (progn (try-move 'o field evt boards)
+					      (update field boards winner)))))
 	      (bind field "<KeyPress-q>" (lambda (evt) (declare (ignore evt)) (exit-wish)))
-	      (bind field "<ButtonPress-2>" (lambda (evt)
-					      (let ((coords (event->game-coords evt)))
-						(format t "~A~%" (nth (cadr coords) (nth (car coords) boards))))
-					      ))
+	      (bind field "<ButtonPress-2>" (lambda (evt) (declare (ignore evt))
+					      (format t "~A~%" (check-big-victory boards))))
 	      (pack field)
 	      (force-focus field)
 	      (draw-board field 0 0 500 500)
