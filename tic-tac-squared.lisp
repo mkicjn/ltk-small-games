@@ -113,4 +113,4 @@
 		    do (loop for iy from 0 to 2 do
 			     (draw-board field (* ix 166) (* iy 166) 166 166))))))
 
-(game)
+(tic-tac-squared)
