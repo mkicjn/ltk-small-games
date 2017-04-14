@@ -47,7 +47,7 @@
 	     (funcall (symbol->draw-fun sym) canvas (event->nw-tile-coords evt)) boards)
       nil)))
 
-(defun check-small-victory (board)
+(defun check-victory (board)
   (destructuring-bind (a b c d e f g h i) board
     (reduce (lambda (x y) (or x y))
 	    (mapcar (lambda (l)
@@ -56,8 +56,8 @@
 		      (,a ,d ,g) (,b ,e ,h) (,c ,f ,i)
 		      (,a ,e ,i) (,c ,e ,g) )))))
 
-(defun check-big-victory (board)
-  (check-small-victory (mapcar #'check-small-victory board)))
+(defun check-grand-victory (board)
+  (check-victory (mapcar #'check-victory board)))
 
 (defun restrict-cell (arg) (if (null arg) -1 arg))
 
@@ -67,11 +67,11 @@
 	       for i from 0 to 8
 	       for ix = (* (mod i 3) 166)
 	       for iy = (* (_/ i 3) 166)
-	       for sieg = (check-small-victory (nth i ,board))
+	       for sieg = (check-victory (nth i ,board))
 	       when sieg do (progn (funcall (symbol->draw-fun sieg) ,canvas `(,ix ,iy) :width 166 :height 166)
 				   (setf (nth i tmp-board) (mapcar #'restrict-cell (nth i tmp-board))))
 	       finally (return tmp-board)))
-	  (setf ,winner (check-big-victory ,board))))
+	  (setf ,winner (check-grand-victory ,board))))
 
 (defun game ()
   (with-ltk ()
@@ -83,8 +83,6 @@
 	      (bind field "<ButtonPress-3>" (lambda (evt) (unless winner (progn (try-move 'o field evt boards)
 					      (update field boards winner)))))
 	      (bind field "<KeyPress-q>" (lambda (evt) (declare (ignore evt)) (exit-wish)))
-	      (bind field "<ButtonPress-2>" (lambda (evt) (declare (ignore evt))
-					      (format t "~A~%" (check-big-victory boards))))
 	      (pack field)
 	      (force-focus field)
 	      (draw-board field 0 0 500 500)
