@@ -3,44 +3,56 @@
 
 (setf *random-state* (make-random-state t))
 
-(defun zeros (n) (loop repeat n collect 0))
-
-(defun int-coords (index &optional (maxx 20)) (list (mod index maxx) (floor (/ index maxx))))
+(defun int-coords (index &optional (maxx 20))
+  "Returns 2-D coordinates given a linear coordinate"
+  (list (mod index maxx) (floor (/ index maxx))))
 
 (defun grid-coords (index &optional (maxx 20) &aux (coords (int-coords index maxx)))
+  "Returns screen coordinates given a linear coordinate"
   (mapcar #'1+ (list (* (car coords) 25) (* (cadr coords) 25)
 		     (* (1+ (car coords)) 25) (* (1+ (cadr coords)) 25))))
 
 (defun update-life (life-vals)
+  "Pushes every item in list towards zero by one"
   (mapcar (lambda (x) (if (zerop x) 0 (funcall (if (> x 0) #'1- #'1+) x))) life-vals))
 
 (defun create-grid (canvas life-vals)
+  "Draws a new grid of rectangles on the screen"
   (loop for life in life-vals for i from 0
 	collect (apply #'create-rectangle canvas (grid-coords i))))
 
 (defun draw-grid (canvas grid life-vals)
+  "Recolors the grid to reflect life values in each cell"
   (loop for life in life-vals for i from 0
 	do (itemconfigure canvas (nth i grid) :fill (if (zerop life) 'white
 						      (if (> life 0) 'green 'blue)))))
 
-(defun index-move (direction) (ccase direction (up -20) (left -1) (right 1) (down 20)))
+(defun index-move (direction)
+  "Returns offset given direction symbol"
+  (ccase direction (up -20) (left -1) (right 1) (down 20)))
 
-(defun random-elt (l) (nth (random (length l)) l))
+(defun random-elt (l)
+  "Chooses a random element in a list"
+  (nth (random (length l)) l))
 
 (defun new-food-index (life-vals)
+  "Returns a linear coordinate for the food's new position"
   (let ((p (loop for life in life-vals for i from 0 if (zerop life) collect i))) (random-elt p)))
 
 (defun move-food (canvas food old-index life-vals &aux (new-index (new-food-index life-vals)))
+  "Physically relocates the food circle"
   (let ((deltas (mapcar #'- (grid-coords new-index) (grid-coords old-index))))
   (itemmove canvas food (car deltas) (cadr deltas))) new-index)
 
 (defun check-boundaries (index next-move)
+  "Checks whether a snake is about to go off the screen"
   (or (and (< index 20) (equal next-move 'up))
       (and (> index 379) (equal next-move 'down))
       (and (= (mod index 20) 0) (equal next-move 'left))
       (and (= (mod index 20) 19) (equal next-move 'right))))
 
 (defun lose ()
+  "Creates a window with a losing message and quit button"
   (with-ltk ()
 	    (let* ((frame (make-instance 'frame :height 200 :width 300))
 		   (text (make-instance 'label :master frame :text
@@ -52,9 +64,11 @@
   #'exit-wish)
 
 (defun snake (&key (p2 nil)(speed 8))
+  "Creates a new snake game window. Keyword p2 indicates a second player"
   (with-ltk ()
 	    (let* ((c (make-instance 'canvas :height 501 :width 501))
-		   (life-vals (zeros 400))(grid-field (create-grid c life-vals))
+		   (life-vals (loop repeat 400 collect 0))
+		   (grid-field (create-grid c life-vals))
 		   (next-move 'right) (moved nil) (index 20) (s-length 3)
 		   (next-move2 'left) (moved2 nil) (index2 379) (s-length2 -3)
 		   (food-index (new-food-index life-vals))
@@ -129,6 +143,7 @@
 	      (funcall (lose)))))
 
 (defun menu ()
+  "Creates a menu with buttons for choosing a snake game mode"
   (with-ltk ()
 	    (wm-title *tk* "Snake")
 	    (let* ((button1 (make-instance 'button :text "One player"
