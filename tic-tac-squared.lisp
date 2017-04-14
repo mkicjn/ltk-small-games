@@ -15,12 +15,21 @@
 
 (defun draw-x (canvas coords &key (width 55)(height 55)(margin 10))
   (let ((x (car coords))(y (cadr coords)))
-    (create-line canvas (list (+ x margin) (+ y margin) (+ x width (- margin)) (+ y height (- margin))))
-    (create-line canvas (list (+ x margin) (+ y height (- margin)) (+ x width (- margin)) (+ y margin)))))
+    (itemconfigure canvas
+		   (create-line canvas (list (+ x margin) (+ y margin)
+					     (+ x width (- margin)) (+ y height (- margin))))
+		   :fill 'blue)
+    (itemconfigure canvas
+		   (create-line canvas (list (+ x margin) (+ y height (- margin))
+					     (+ x width (- margin)) (+ y margin)))
+		   :fill 'blue)))
 
 (defun draw-o (canvas coords &key (width 55)(height 55)(margin 10))
   (let ((x (car coords)) (y (cadr coords)))
-    (create-oval canvas (+ x margin) (+ y margin) (+ x width (- margin)) (+ y height (- margin)))))
+    (itemconfigure canvas
+		   (create-oval canvas (+ x margin) (+ y margin)
+				       (+ x width (- margin)) (+ y height (- margin)))
+		   :outline 'red)))
 
 (defun event->nw-tile-coords (evt)
   (mapcar (lambda (n) (loop for i from 0 to 500 by 55 when (> i n) return (- i 55)))
@@ -84,6 +93,7 @@
 					      (update field boards winner)))))
 	      (bind field "<KeyPress-q>" (lambda (evt) (declare (ignore evt)) (exit-wish)))
 	      (pack field)
+	      (itemconfigure field (create-rectangle field 0 0 499 499) :fill 'white)
 	      (force-focus field)
 	      (draw-board field 0 0 500 500)
 	      (loop for ix from 0 to 2
