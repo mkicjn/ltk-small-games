@@ -1,4 +1,4 @@
-# ltk-snake
-Simplistic recreation of Snake using LTK's canvas widget, made for practice
+# ltk-small-games
+Simplistic games written in Common Lisp with LTK for practice
 
 Quicklisp is a prerequisite
