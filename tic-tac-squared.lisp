@@ -48,10 +48,7 @@
 	(t nil)))
 
 (defun event->game-coords (evt)
-  "Returns list of coordinates that can be used by the game given an event.
-  Both numbers are integers in [0, 8] and correspond to a spot in reading order.
-  The first number is the event's position in the grand board, the second number
-  is the event's position on the board inside that position."
+  "Returns list of coordinates that can be used by the game given an event."
   (let* ((coords (event->nw-tile-coords evt))
 	 (screen-x (car coords))(screen-y (cadr coords))
 	 (small-x (_/ screen-x 55))(small-y (_/ screen-y 55))
@@ -60,8 +57,7 @@
     `(,(+ big-x (* 3 big-y)) ,(+ sub-x (* 3 sub-y)))))
 
 (defun try-move (sym canvas evt boards)
-  "If the spot clicked is not taken, draws the move and updates the records.
-  Returns true if move succeeded, nil if the move failed."
+  "If the spot clicked is not taken, draws the move and updates the records."
   (let* ((game-c (event->game-coords evt))
 	(big-c (car game-c))(small-c (cadr game-c)))
     (if (null (nth small-c (nth big-c boards)))
