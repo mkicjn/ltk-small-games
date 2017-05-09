@@ -79,6 +79,14 @@
   "Checks for victory on the grand tic-tac-toe board. Returns 'x 'o or nil."
   (check-victory (mapcar #'check-victory board)))
 
+(defun restrict-board (board)
+  "Replaces nil in list with 1"
+  (mapcar (lambda (x) (if (null x) 1 x)) board))
+
+(defun unrestrict-board (board)
+  "Replaces 1 in list with nil"
+  (mapcar (lambda (x) (if (and (numberp x) (= x 1)) nil x)) board))
+
 (defmacro update (canvas board winner)
   "Checks for small victories, and restricts moves on decided super-cells.
   Sets the winner variable when a grand victory is achieved by a player."
@@ -102,9 +110,19 @@
 		   (boards (loop repeat 9 collect (loop repeat 9 collect nil)))
 		   (winner nil)(next-player 'x)(players '(x o)))
 	      (bind field "<ButtonPress-1>"
-		    (lambda (evt) (unless winner (progn (when (try-move next-player field evt boards)
-							  (setf next-player (car (remove next-player players))))
-					      (update field boards winner)))))
+		    (lambda (evt)
+		      (unless winner
+			(progn (when (try-move next-player field evt boards)
+				 (progn (setf next-player (car (remove next-player players))))
+				 (setf boards (loop for board in boards for i from 0
+						    with coords = (event->game-coords evt)
+						    collect (if (or (= i (cadr coords))
+								    (check-victory (nth (cadr coords) boards))
+								    )
+							      (unrestrict-board board)
+							      (restrict-board board))))
+				 (format t "~A~%~%" boards))
+			       (update field boards winner)))))
 	      (pack field)
 	      (itemconfigure field (create-rectangle field 1 1 500 500) :fill 'white)
 	      (force-focus field)
