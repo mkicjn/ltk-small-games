@@ -117,8 +117,7 @@
 				 (setf boards (loop for board in boards for i from 0
 						    with coords = (event->game-coords evt)
 						    collect (if (or (= i (cadr coords))
-								    (check-victory (nth (cadr coords) boards))
-								    )
+								    (check-victory (nth (cadr coords) boards)))
 							      (unrestrict-board board)
 							      (restrict-board board)))))
 			       (update field boards winner)))))
