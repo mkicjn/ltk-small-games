@@ -36,6 +36,13 @@
 				       (+ x width (- margin)) (+ y height (- margin)))
 		   :outline 'red)))
 
+
+(defun draw-square (canvas coords &key (len 166)(margin 5))
+  "Draws a square at coordinates in list, default side length 166, then returns it"
+  (let ((x (car coords)) (y (cadr coords)))
+    (create-rectangle canvas (+ x margin) (+ y margin)
+		             (+ x len (- margin)) (+ y len (- margin)))))
+
 (defun event->nw-tile-coords (evt)
   "Returns list coordinates '(x y) given an LTK event"
   (mapcar (lambda (n) (loop for i from 0 to 500 by 55 when (> i n) return (- i 55)))
@@ -43,9 +50,11 @@
 
 (defun symbol->draw-fun (sym)
   "Returns draw function for argument 'x or 'o, nil otherwise"
-  (cond ((equal sym 'x) #'draw-x)
-	((equal sym 'o) #'draw-o)
-	(t nil)))
+  (cadr (assoc sym `((x ,#'draw-x)(o ,#'draw-o)))))
+
+(defun symbol->color (sym)
+  "Returns the color associated with the symbol by the game"
+  (cadr (assoc sym '((x blue)(o red)))))
 
 (defun event->game-coords (evt)
   "Returns list of coordinates that can be used by the game given an event."
@@ -87,6 +96,14 @@
   "Replaces 1 in list with nil"
   (mapcar (lambda (x) (if (and (numberp x) (= x 1)) nil x)) board))
 
+(defmacro move-legality-square (canvas square cell unrestrict)
+  "Moves the square surrounding the cell containing the next legal move"
+  `(progn (itemdelete ,canvas ,square)
+	  (if (null ,unrestrict)
+	     (setf ,square (draw-square ,canvas (list (* (mod ,cell 3) 166)
+						       (* (_/ ,cell 3) 166))))
+	     (setf ,square (draw-square ,canvas '(0 0) :len 500)))))
+
 (defmacro update (canvas board winner)
   "Checks for small victories, and restricts moves on decided super-cells.
   Sets the winner variable when a grand victory is achieved by a player."
@@ -108,19 +125,26 @@
   (with-ltk ()
 	    (let* ((field (make-instance 'canvas :height 500 :width 500))
 		   (boards (loop repeat 9 collect (loop repeat 9 collect nil)))
-		   (winner nil)(next-player 'x)(players '(x o)))
+		   (winner nil)(next-player 'x)(players '(x o))
+		   (lsquare (draw-square field '(0 0) :len 500)))
 	      (bind field "<ButtonPress-1>"
 		    (lambda (evt)
 		      (unless winner
 			(progn (when (try-move next-player field evt boards)
 				 (progn (setf next-player (car (remove next-player players))))
 				 (setf boards (loop for board in boards for i from 0
-						    with coords = (event->game-coords evt)
-						    collect (if (or (= i (cadr coords))
-								    (check-victory (nth (cadr coords) boards)))
+						    with coord = (cadr (event->game-coords evt))
+						    with unrestrict = (check-victory (nth coord boards))
+						    collect (if (or (= i coord) unrestrict)
 							      (unrestrict-board board)
-							      (restrict-board board)))))
-			       (update field boards winner)))))
+							      (restrict-board board))
+						    finally (progn (move-legality-square field lsquare coord unrestrict)
+								   (itemconfigure field lsquare
+										  :outline (symbol->color next-player))))))
+			       (update field boards winner)
+			       (when winner (itemdelete field lsquare))))))
+	      (bind field "<ButtonPress-3>"
+		    (lambda (evt) (draw-square field `(,(event-x evt) ,(event-y evt)))))
 	      (pack field)
 	      (itemconfigure field (create-rectangle field 1 1 500 500) :fill 'white)
 	      (force-focus field)
