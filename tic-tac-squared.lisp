@@ -139,7 +139,6 @@
 				 (setf boards (loop for board in boards for i from 0
 						    with coord = (cadr (event->game-coords evt))
 						    with full-board = (null (remove-if #'player-symbol-p (nth coord boards)))
-						    ;; To-do: test whether tied boards set unrestricted to t
 						    with unrestrict = (or (check-victory (nth coord boards)) full-board)
 						    collect (if (or (= i coord) unrestrict)
 							      (unrestrict-board board)
