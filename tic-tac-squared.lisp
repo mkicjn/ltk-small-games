@@ -96,6 +96,10 @@
   "Replaces 1 in list with nil"
   (mapcar (lambda (x) (if (and (numberp x) (= x 1)) nil x)) board))
 
+(defun player-symbol-p (sym)
+  "Returns true if arg is 'x or 'o"
+  (member sym '(x o)))
+
 (defmacro move-legality-square (canvas square cell unrestrict)
   "Moves the square surrounding the cell containing the next legal move"
   `(progn (itemdelete ,canvas ,square)
@@ -134,7 +138,9 @@
 				 (progn (setf next-player (car (remove next-player players))))
 				 (setf boards (loop for board in boards for i from 0
 						    with coord = (cadr (event->game-coords evt))
-						    with unrestrict = (check-victory (nth coord boards))
+						    with full-board = (null (remove-if #'player-symbol-p (nth coord boards)))
+						    ;; To-do: test whether tied boards set unrestricted to t
+						    with unrestrict = (or (check-victory (nth coord boards)) full-board)
 						    collect (if (or (= i coord) unrestrict)
 							      (unrestrict-board board)
 							      (restrict-board board))
