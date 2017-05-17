@@ -147,7 +147,9 @@
 								   (itemconfigure field lsquare
 										  :outline (symbol->color next-player))))))
 			       (update field boards winner)
-			       (when winner (itemdelete field lsquare))))))
+			       (when (or winner (not (reduce (lambda (x y) (or x y))
+							     (mapcar (lambda (l) (member nil l)) boards))))
+				 (itemdelete field lsquare))))))
 	      (bind field "<ButtonPress-3>"
 		    (lambda (evt) (draw-square field `(,(event-x evt) ,(event-y evt)))))
 	      (pack field)
