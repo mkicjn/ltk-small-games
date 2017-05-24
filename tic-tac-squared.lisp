@@ -115,7 +115,7 @@
 	 collect (if (or unrestrict (= i ,coord))
 		   (unrestrict-board board)
 		   (restrict-board board))
-	 finally (progn (move-legality-square ,canvas ,square (if (null ,coord) 0 ,coord) unrestrict)
+	 finally (progn (move-legality-square ,canvas ,square ,coord unrestrict)
 			(itemconfigure ,canvas ,square
 				       :outline (symbol->color ,next-player)))))
 
@@ -156,15 +156,18 @@
 			       (when (or winner (not (reduce (lambda (x y) (or x y))
 							     (mapcar (lambda (l) (member nil l)) boards))))
 				 (itemdelete field lsquare))))))
+	      (bind field "<ButtonPress-2>"
+		    (lambda (evt) (declare (ignore evt))
+		      (format t "~A~%" move-history)))
 	      (bind field "<ButtonPress-3>"
 		    (lambda (evt) (declare (ignore evt))
-		      (format t "~A~%" move-history) ;;;;;;;;;;;;;;;;;;
 		      (unless (null move-history)
+			(format t "~A ~A~%" (car move-history) (cadr move-history))
 			(let ((coords (pop move-history)))
 			  (setf (nth (cadr coords) (nth (car coords) boards)) nil))
 			(setf next-player (car (remove next-player players)))
 			(mapc (lambda (x) (itemdelete field x)) (pop move-history))
-			(enforce-legality field boards (cadar move-history) next-player lsquare))))
+			(setf boards (enforce-legality field boards (cadar move-history) next-player lsquare)))))
 	      (pack field)
 	      (itemconfigure field (create-rectangle field 1 1 500 500) :fill 'white)
 	      (force-focus field)
