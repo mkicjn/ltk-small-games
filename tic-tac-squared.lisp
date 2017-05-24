@@ -18,23 +18,22 @@
 
 (defun draw-x (canvas coords &key (width 55)(height 55)(margin 10))
   "Draws a blue X at coordinates in list, default height & width 55"
-  (let ((x (car coords))(y (cadr coords)))
-    (itemconfigure canvas
-		   (create-line canvas (list (+ x margin) (+ y margin)
-					     (+ x width (- margin)) (+ y height (- margin))))
-		   :fill 'blue)
-    (itemconfigure canvas
-		   (create-line canvas (list (+ x margin) (+ y height (- margin))
-					     (+ x width (- margin)) (+ y margin)))
-		   :fill 'blue)))
+  (let* ((x (car coords))(y (cadr coords))
+	 (line1 (create-line canvas (list (+ x margin) (+ y margin)
+					  (+ x width (- margin)) (+ y height (- margin)))))
+	 (line2 (create-line canvas (list (+ x margin) (+ y height (- margin))
+					  (+ x width (- margin)) (+ y margin)))))
+    (itemconfigure canvas line1 :fill 'blue)
+    (itemconfigure canvas line2 :fill 'blue)
+    (list line1 line2)))
 
 (defun draw-o (canvas coords &key (width 55)(height 55)(margin 10))
   "Draws a red O at coordinates in list, default height & width 55"
-  (let ((x (car coords)) (y (cadr coords)))
-    (itemconfigure canvas
-		   (create-oval canvas (+ x margin) (+ y margin)
-				       (+ x width (- margin)) (+ y height (- margin)))
-		   :outline 'red)))
+  (let* ((x (car coords)) (y (cadr coords))
+	 (circle (create-oval canvas (+ x margin) (+ y margin)
+			      (+ x width (- margin)) (+ y height (- margin)))))
+    (itemconfigure canvas circle :outline 'red)
+    (list circle)))
 
 
 (defun draw-square (canvas coords &key (len 166)(margin 5))
@@ -71,7 +70,7 @@
 	(big-c (car game-c))(small-c (cadr game-c)))
     (if (null (nth small-c (nth big-c boards)))
       (progn (setf (nth small-c (nth big-c boards)) sym)
-	     (funcall (symbol->draw-fun sym) canvas (event->nw-tile-coords evt)) t)
+	     (funcall (symbol->draw-fun sym) canvas (event->nw-tile-coords evt)))
       nil)))
 
 (defun check-victory (board)
@@ -104,9 +103,21 @@
   "Moves the square surrounding the cell containing the next legal move"
   `(progn (itemdelete ,canvas ,square)
 	  (if (null ,unrestrict)
-	     (setf ,square (draw-square ,canvas (list (* (mod ,cell 3) 166)
-						       (* (_/ ,cell 3) 166))))
-	     (setf ,square (draw-square ,canvas '(0 0) :len 500)))))
+	    (setf ,square (draw-square ,canvas (list (* (mod ,cell 3) 166)
+						     (* (_/ ,cell 3) 166))))
+	    (setf ,square (draw-square ,canvas '(0 0) :len 500)))))
+
+(defmacro enforce-legality (canvas boards coord next-player square)
+  "Returns a grand board with only correct cells allowed and updates legality square"
+  `(loop for board in ,boards for i from 0
+	 with full-board = (or (null ,coord) (null (remove-if #'player-symbol-p (nth ,coord ,boards))))
+	 with unrestrict = (or (null ,coord) (check-victory (nth ,coord ,boards)) full-board)
+	 collect (if (or unrestrict (= i ,coord))
+		   (unrestrict-board board)
+		   (restrict-board board))
+	 finally (progn (move-legality-square ,canvas ,square (if (null ,coord) 0 ,coord) unrestrict)
+			(itemconfigure ,canvas ,square
+				       :outline (symbol->color ,next-player)))))
 
 (defmacro update (canvas board winner)
   "Checks for small victories, and restricts moves on decided super-cells.
@@ -130,28 +141,30 @@
 	    (let* ((field (make-instance 'canvas :height 500 :width 500))
 		   (boards (loop repeat 9 collect (loop repeat 9 collect nil)))
 		   (winner nil)(next-player 'x)(players '(x o))
-		   (lsquare (draw-square field '(0 0) :len 500)))
+		   (lsquare (draw-square field '(0 0) :len 500))(move-history nil))
 	      (bind field "<ButtonPress-1>"
 		    (lambda (evt)
 		      (unless winner
-			(progn (when (try-move next-player field evt boards)
-				 (progn (setf next-player (car (remove next-player players))))
-				 (setf boards (loop for board in boards for i from 0
-						    with coord = (cadr (event->game-coords evt))
-						    with full-board = (null (remove-if #'player-symbol-p (nth coord boards)))
-						    with unrestrict = (or (check-victory (nth coord boards)) full-board)
-						    collect (if (or (= i coord) unrestrict)
-							      (unrestrict-board board)
-							      (restrict-board board))
-						    finally (progn (move-legality-square field lsquare coord unrestrict)
-								   (itemconfigure field lsquare
-										  :outline (symbol->color next-player))))))
+			(progn (let ((shape (try-move next-player field evt boards))
+				     (coords (event->game-coords evt)))
+				 (when shape
+				   (setf next-player (car (remove next-player players)))
+				   (setf boards (enforce-legality field boards (cadr coords) next-player lsquare))
+				   (push shape move-history))
+				   (push coords move-history))
 			       (update field boards winner)
 			       (when (or winner (not (reduce (lambda (x y) (or x y))
 							     (mapcar (lambda (l) (member nil l)) boards))))
 				 (itemdelete field lsquare))))))
 	      (bind field "<ButtonPress-3>"
-		    (lambda (evt) (draw-square field `(,(event-x evt) ,(event-y evt)))))
+		    (lambda (evt) (declare (ignore evt))
+		      (format t "~A~%" move-history) ;;;;;;;;;;;;;;;;;;
+		      (unless (null move-history)
+			(let ((coords (pop move-history)))
+			  (setf (nth (cadr coords) (nth (car coords) boards)) nil))
+			(setf next-player (car (remove next-player players)))
+			(mapc (lambda (x) (itemdelete field x)) (pop move-history))
+			(enforce-legality field boards (cadar move-history) next-player lsquare))))
 	      (pack field)
 	      (itemconfigure field (create-rectangle field 1 1 500 500) :fill 'white)
 	      (force-focus field)
