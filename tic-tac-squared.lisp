@@ -166,13 +166,17 @@
 			(let ((coords (pop move-history)))
 			  (setf (nth (cadr coords) (nth (car coords) boards)) nil))
 			(setf next-player (car (remove next-player players)))
-			(setf boards (enforce-legality field boards (cadadr move-history) next-player lsquare)))))
+			(setf boards (enforce-legality field boards (cadadr move-history) next-player lsquare))
+			(unless (null move-history)
+			  (setf (nth (cadadr move-history) boards)
+				(mapcar (lambda (n) (if (and (numberp n) (= n -1)) nil n))
+					(nth (cadadr move-history) boards)))))))
 	      (pack field)
 	      (itemconfigure field (create-rectangle field 1 1 500 500) :fill 'white)
 	      (force-focus field)
 	      (draw-board field 0 0 500 500)
 	      (loop for ix from 0 to 2
-		    do (loop for iy from 0 to 2 do
-			     (draw-board field (* ix 166) (* iy 166) 166 166))))))
+		    do (loop for iy from 0 to 2
+			     do (draw-board field (* ix 166) (* iy 166) 166 166))))))
 
 (tic-tac-squared)
