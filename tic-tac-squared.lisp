@@ -119,7 +119,7 @@
 			(itemconfigure ,canvas ,square
 				       :outline (symbol->color ,next-player)))))
 
-(defmacro update (canvas board winner)
+(defmacro update (canvas board history winner)
   "Checks for small victories, and restricts moves on decided super-cells.
   Sets the winner variable when a grand victory is achieved by a player."
   `(progn (setf ,board
@@ -129,7 +129,10 @@
 	       for iy = (* (_/ i 3) 166)
 	       for sieg = (check-victory (nth i ,board))
 	       when sieg
-	       do (progn (funcall (symbol->draw-fun sieg) ,canvas `(,ix ,iy) :width 166 :height 166)
+	       do (progn (push (append (funcall (symbol->draw-fun sieg)
+						,canvas `(,ix ,iy) :width 166 :height 166)
+				       (pop ,history))
+			       ,history)
 			 (setf (nth i tmp-board) (mapcar (lambda (arg) (if (null arg) -1 arg))
 							 (nth i tmp-board))))
 	       finally (return tmp-board)))
@@ -150,9 +153,9 @@
 				 (when shape
 				   (setf next-player (car (remove next-player players)))
 				   (setf boards (enforce-legality field boards (cadr coords) next-player lsquare))
-				   (push shape move-history))
-				   (push coords move-history))
-			       (update field boards winner)
+				   (push coords move-history)
+				   (push shape move-history)))
+			       (update field boards move-history winner)
 			       (when (or winner (not (reduce (lambda (x y) (or x y))
 							     (mapcar (lambda (l) (member nil l)) boards))))
 				 (itemdelete field lsquare))))))
@@ -163,11 +166,11 @@
 		    (lambda (evt) (declare (ignore evt))
 		      (unless (null move-history)
 			(format t "~A ~A~%" (car move-history) (cadr move-history))
+			(mapc (lambda (x) (itemdelete field x)) (pop move-history))
 			(let ((coords (pop move-history)))
 			  (setf (nth (cadr coords) (nth (car coords) boards)) nil))
 			(setf next-player (car (remove next-player players)))
-			(mapc (lambda (x) (itemdelete field x)) (pop move-history))
-			(setf boards (enforce-legality field boards (cadar move-history) next-player lsquare)))))
+			(setf boards (enforce-legality field boards (cadadr move-history) next-player lsquare)))))
 	      (pack field)
 	      (itemconfigure field (create-rectangle field 1 1 500 500) :fill 'white)
 	      (force-focus field)
