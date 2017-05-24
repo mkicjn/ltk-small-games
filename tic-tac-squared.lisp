@@ -159,13 +159,9 @@
 			       (when (or winner (not (reduce (lambda (x y) (or x y))
 							     (mapcar (lambda (l) (member nil l)) boards))))
 				 (itemdelete field lsquare))))))
-	      (bind field "<ButtonPress-2>"
-		    (lambda (evt) (declare (ignore evt))
-		      (format t "~A~%" move-history)))
 	      (bind field "<ButtonPress-3>"
 		    (lambda (evt) (declare (ignore evt))
 		      (unless (null move-history)
-			(format t "~A ~A~%" (car move-history) (cadr move-history))
 			(mapc (lambda (x) (itemdelete field x)) (pop move-history))
 			(let ((coords (pop move-history)))
 			  (setf (nth (cadr coords) (nth (car coords) boards)) nil))
